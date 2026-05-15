@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Projecteur solaire LED 200W",
+    "description": "Projecteur solaire puissant avec telecommande, batterie longue duree et installation murale facile.",
+    "price": "149.99",
+    "old_price": "179.99",
+    "category": "Projecteurs",
+    "image_url": "https://solar4life.fr/example-projecteur.jpg",
+    "product_url": "https://solar4life.fr/projecteur-solaire-led-200w",
+    "stock": 15,
+    "specifications": {
+      "puissance": "200W",
+      "autonomie": "8 a 12 heures",
+      "indice_protection": "IP65"
+    }
+  }
+]

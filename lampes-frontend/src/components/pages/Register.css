@@ -1,0 +1,20 @@
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.auth-error {
+  padding: 12px 14px;
+  border: 1px solid rgba(204, 83, 62, 0.35);
+  border-radius: 14px;
+  background: rgba(239, 123, 68, 0.08);
+  color: #8d3127;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

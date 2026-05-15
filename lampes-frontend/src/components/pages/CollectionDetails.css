@@ -1,0 +1,47 @@
+.collection-details-page {
+  padding: 10px 0 24px;
+}
+
+.back-link {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+
+.collection-details-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  margin-bottom: 28px;
+}
+
+.collection-details-copy h1 {
+  margin: 16px 0 12px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.collection-details-copy p {
+  color: var(--muted);
+}
+
+.collection-details-visual img {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  border-radius: 24px;
+}
+
+.collection-details-state {
+  padding: 28px;
+  border-radius: 24px;
+}
+
+@media (max-width: 900px) {
+  .collection-details-hero {
+    grid-template-columns: 1fr;
+  }
+}

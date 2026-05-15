@@ -1,0 +1,145 @@
+.reviews-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.reviews-list-panel,
+.review-form {
+  padding: 28px;
+}
+
+.reviews-heading {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.reviews-heading .chip,
+.review-form h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+}
+
+.reviews-heading .chip svg,
+.review-form h3 svg {
+  color: #e38a11;
+}
+
+.reviews-heading h2 {
+  color: #ffffff;
+  font-size: 1.15rem;
+}
+
+.reviews-list {
+  display: grid;
+  gap: 14px;
+}
+
+.reviews-empty,
+.reviews-list-panel > p {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.review-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.review-stars {
+  display: flex;
+  gap: 4px;
+  color: rgba(227, 138, 17, 0.28);
+}
+
+.review-stars .filled {
+  color: #e38a11;
+}
+
+.review-card h4 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.98rem;
+}
+
+.review-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.6;
+}
+
+.review-card strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.review-card span {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.84rem;
+}
+
+.review-form {
+  display: grid;
+  gap: 22px;
+  align-content: start;
+}
+
+.review-form label {
+  display: grid;
+  gap: 10px;
+}
+
+.review-form label span {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.9rem;
+}
+
+.review-form input,
+.review-form select,
+.review-form textarea {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.16);
+  padding: 14px 16px;
+  color: #ffffff;
+}
+
+.review-form input::placeholder,
+.review-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.review-form select option {
+  color: #111111;
+  background: #ffffff;
+}
+
+.review-form textarea {
+  min-height: 230px;
+  resize: vertical;
+}
+
+.review-form .btn-primary {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 7px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #f0a02a, #d77d06);
+}
+
+@media (max-width: 920px) {
+  .reviews-panel {
+    grid-template-columns: 1fr;
+  }
+}

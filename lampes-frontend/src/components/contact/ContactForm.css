@@ -1,0 +1,66 @@
+.contact-form {
+  display: grid;
+  gap: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.contact-form h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+  font-size: 1.3rem;
+}
+
+.contact-form h2 svg {
+  color: #e38a11;
+}
+
+.contact-form-grid {
+  display: grid;
+  gap: 22px;
+}
+
+.contact-form label {
+  display: grid;
+  gap: 10px;
+}
+
+.contact-form label span {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.9rem;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.16);
+  padding: 14px 16px;
+  color: #ffffff;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.contact-form textarea {
+  min-height: 230px;
+  resize: vertical;
+}
+
+.contact-form .btn-primary {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  color: #ffffff;
+  background: linear-gradient(180deg, #f0a02a, #d77d06);
+}

@@ -1,0 +1,92 @@
+.collection-card {
+  min-height: 440px;
+  display: grid;
+  grid-template-rows: 230px 1fr;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  box-shadow: none;
+}
+
+.collection-card-image {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.collection-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.collection-card:hover .collection-card-image img {
+  transform: scale(1.04);
+}
+
+.collection-card-content {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 26px 30px 30px;
+  color: #ffffff;
+}
+
+.collection-card-content .chip {
+  color: #e38a11;
+  font-size: 0.78rem;
+}
+
+.collection-card-content h3 {
+  color: #ffffff;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.collection-card-content p {
+  max-width: 520px;
+  color: rgba(255, 255, 255, 0.66);
+  line-height: 1.7;
+}
+
+.collection-card-content .btn-outline {
+  width: fit-content;
+  min-width: 214px;
+  min-height: 52px;
+  justify-content: space-between;
+  margin-top: 6px;
+  border-radius: 6px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  color: #ffffff;
+}
+
+.collection-card-content .btn-outline svg {
+  color: #e38a11;
+}
+
+.collection-card-featured {
+  grid-column: 1 / -1;
+  min-height: 290px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.collection-card-featured .collection-card-image {
+  height: 100%;
+}
+
+.collection-card-featured .collection-card-content {
+  align-content: center;
+}
+
+@media (max-width: 800px) {
+  .collection-card,
+  .collection-card-featured {
+    grid-column: auto;
+    min-height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: 220px 1fr;
+  }
+}
