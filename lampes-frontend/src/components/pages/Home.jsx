@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { FaBolt, FaHeadset, FaLeaf, FaLock, FaShieldAlt, FaSun, FaTools, FaTruck } from 'react-icons/fa'
 import Hero from '../home/Hero'
 import FeaturedProducts from '../home/FeaturedProducts'
+import ScrollReveal from '../common/ScrollReveal'
 import { productService } from '../../services/productService'
 import './Home.css'
 
@@ -59,7 +60,7 @@ const Home = () => {
     <div className="home-page">
       <Hero />
 
-      <section className="solar-about-section">
+      <ScrollReveal as="section" className="solar-about-section">
         <div className="container">
           <div className="solar-about-card">
             <div>
@@ -74,43 +75,53 @@ const Home = () => {
             <FaSun />
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="benefits-section">
+      <ScrollReveal as="section" className="benefits-section">
         <div className="container">
           <span className="chip">Benefices</span>
           <h2>Pourquoi choisir Solarlight</h2>
           <div className="benefits-grid">
-            {benefits.map((benefit) => (
-              <article key={benefit.title} className="benefit-card">
+            {benefits.map((benefit, index) => (
+              <ScrollReveal
+                as="article"
+                key={benefit.title}
+                className="benefit-card"
+                delay={index * 90}
+              >
                 <span>{benefit.icon}</span>
                 <div>
                   <h3>{benefit.title}</h3>
                   <p>{benefit.text}</p>
                 </div>
-              </article>
+              </ScrollReveal>
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       <FeaturedProducts products={featuredProducts} loading={loading} error={error} />
 
-      <section className="service-strip-section">
+      <ScrollReveal as="section" className="service-strip-section">
         <div className="container">
           <div className="service-strip-grid">
-            {serviceCards.map(([icon, title, text]) => (
-              <article key={title} className="service-card">
+            {serviceCards.map(([icon, title, text], index) => (
+              <ScrollReveal
+                as="article"
+                key={title}
+                className="service-card"
+                delay={index * 80}
+              >
                 <span>{icon}</span>
                 <div>
                   <h3>{title}</h3>
                   <p>{text}</p>
                 </div>
-              </article>
+              </ScrollReveal>
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
     </div>
   )
 }

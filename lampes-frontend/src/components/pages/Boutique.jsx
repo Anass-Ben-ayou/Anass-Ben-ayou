@@ -2,6 +2,7 @@ import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'r
 import { FaHeadset, FaLock, FaShieldAlt, FaSpinner, FaThLarge, FaThList, FaTruck } from 'react-icons/fa'
 import ProductCard from '../products/ProductCard'
 import ProductFilters from '../products/ProductFilters'
+import ScrollReveal from '../common/ScrollReveal'
 import { productService } from '../../services/productService'
 import './Boutique.css'
 
@@ -171,7 +172,7 @@ const Boutique = () => {
 
   return (
     <main className="products-page boutique-page">
-      <section className="products-hero">
+      <ScrollReveal as="section" className="products-hero">
         <div className="container">
           <div className="products-hero-panel">
             <div>
@@ -188,19 +189,19 @@ const Boutique = () => {
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       <section className="products-layout container">
-        <aside className="products-sidebar">
+        <ScrollReveal as="aside" className="products-sidebar" direction="left">
           <ProductFilters
             filters={filters}
             categories={categories}
             onChange={handleFilterChange}
             onReset={handleFilterReset}
           />
-        </aside>
+        </ScrollReveal>
 
-        <div className="products-content">
+        <ScrollReveal className="products-content" direction="right">
           <div className="products-header">
             <div>
               <h2>Boutique</h2>
@@ -216,28 +217,30 @@ const Boutique = () => {
           </div>
 
           {error ? (
-            <div className="no-results glass-card">
+            <ScrollReveal className="no-results glass-card">
               <strong>Chargement indisponible</strong>
               <p>{error}</p>
-            </div>
+            </ScrollReveal>
           ) : null}
 
-              {loading ? (
+          {loading ? (
             <div className="catalog-grid">
-                {Array.from({ length: PAGE_SIZE }).map((_, index) => (
-                <div key={index} className="catalog-skeleton-card glass-card">
+              {Array.from({ length: PAGE_SIZE }).map((_, index) => (
+                <ScrollReveal key={index} className="catalog-skeleton-card glass-card" delay={index * 60}>
                   <div className="catalog-skeleton-media shimmer"></div>
                   <div className="catalog-skeleton-line shimmer"></div>
                   <div className="catalog-skeleton-line short shimmer"></div>
                   <div className="catalog-skeleton-line shimmer"></div>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
           ) : products.length > 0 ? (
             <>
               <div className="catalog-grid">
-                {products.map((product) => (
-                  <ProductCard key={product.id || product.id_produit} product={product} />
+                {products.map((product, index) => (
+                  <ScrollReveal key={product.id || product.id_produit} delay={(index % PAGE_SIZE) * 60}>
+                    <ProductCard product={product} />
+                  </ScrollReveal>
                 ))}
               </div>
 
@@ -247,29 +250,29 @@ const Boutique = () => {
               </div>
             </>
           ) : (
-            <div className="no-results glass-card">
+            <ScrollReveal className="no-results glass-card">
               <strong>Aucun produit ne correspond a votre recherche</strong>
               <p>Essayez un autre mot-cle ou reinitialisez les filtres.</p>
-            </div>
+            </ScrollReveal>
           )}
-        </div>
+        </ScrollReveal>
       </section>
 
-      <section className="boutique-benefits">
+      <ScrollReveal as="section" className="boutique-benefits">
         <div className="container">
           <div className="boutique-benefits-grid">
-            {boutiqueBenefits.map(([icon, title, text]) => (
-              <article key={title}>
+            {boutiqueBenefits.map(([icon, title, text], index) => (
+              <ScrollReveal as="article" key={title} delay={index * 80}>
                 <span>{icon}</span>
                 <div>
                   <strong>{title}</strong>
                   <p>{text}</p>
                 </div>
-              </article>
+              </ScrollReveal>
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
     </main>
   )
 }
