@@ -29,7 +29,7 @@ const normalizeImageUrl = (value) => {
 
 export const resolveProductImage = (product) => {
   if (!product) {
-    return PRODUCT_IMAGE_FALLBACK
+    return null
   }
 
   const galleryImage = Array.isArray(product.gallery_images)
@@ -39,7 +39,6 @@ export const resolveProductImage = (product) => {
   const image = galleryImage
     || product.image_url
     || product.image
-    || PRODUCT_IMAGE_FALLBACK
 
-  return normalizeImageUrl(image) || PRODUCT_IMAGE_FALLBACK
+  return normalizeImageUrl(image)
 }

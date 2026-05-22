@@ -11,6 +11,15 @@ class ProductSummaryResource extends JsonResource
     {
         $category = $this->whenLoaded('categorie');
         $imageUrl = $this->resolveImageUrl($this->image_url ?: $this->image);
+        $galleryImages = collect($this->gallery_images ?? [])
+            ->map(fn ($value) => $this->resolveImageUrl($value))
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($galleryImages === [] && $imageUrl) {
+            $galleryImages = [$imageUrl];
+        }
         $averageRating = isset($this->note_moyenne)
             ? $this->note_moyenne
             : (isset($this->avis_avg_note) ? round((float) $this->avis_avg_note, 1) : null);
@@ -37,7 +46,7 @@ class ProductSummaryResource extends JsonResource
             'old_price' => $this->old_price !== null ? (float) $this->old_price : null,
             'image' => $imageUrl,
             'image_url' => $imageUrl,
-            'gallery_images' => $imageUrl ? [$imageUrl] : [],
+            'gallery_images' => $galleryImages,
             'stock' => (int) $this->stock,
             'status' => $this->status,
             'id_categorie' => $this->id_categorie,

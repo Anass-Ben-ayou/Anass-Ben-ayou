@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { api } from '../../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { notifyCartUpdated } from '../../services/cartEvents'
-import { PRODUCT_IMAGE_FALLBACK, resolveProductImage } from '../../utils/productImages'
+import { resolveProductImage } from '../../utils/productImages'
 import './ProductCard.css'
 
 const priceFormatter = new Intl.NumberFormat('fr-MA', {
@@ -55,23 +55,22 @@ const ProductCard = ({ product }) => {
 
   return (
     <article className="product-card">
-      <Link to={`/produit/${productId}`} className="product-image-link">
-        <div className="product-image">
-          {!imageLoaded && <div className="product-image-skeleton shimmer"></div>}
-          <img
-            src={image}
-            alt={name}
-            loading="lazy"
-            decoding="async"
-            onLoad={() => setImageLoaded(true)}
-            onError={(event) => {
-              event.currentTarget.src = PRODUCT_IMAGE_FALLBACK
-              setImageLoaded(true)
-            }}
-            className={imageLoaded ? 'loaded' : 'loading'}
-          />
-        </div>
-      </Link>
+      {image ? (
+        <Link to={`/produit/${productId}`} className="product-image-link">
+          <div className="product-image">
+            {!imageLoaded && <div className="product-image-skeleton shimmer"></div>}
+            <img
+              src={image}
+              alt={name}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
+              className={imageLoaded ? 'loaded' : 'loading'}
+            />
+          </div>
+        </Link>
+      ) : null}
 
       <div className="product-info">
         <div className="product-rating" aria-label={`${rating} etoiles sur 5`}>

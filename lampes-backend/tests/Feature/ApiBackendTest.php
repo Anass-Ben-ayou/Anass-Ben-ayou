@@ -304,6 +304,34 @@ class ApiBackendTest extends TestCase
         ])->assertStatus(400);
     }
 
+    public function test_review_allows_pending_order_after_checkout(): void
+    {
+        $client = Client::create($this->clientData('review-pending@example.com'));
+        $product = $this->createProduct('Lampe Pending Review');
+        $token = $this->issueToken($client);
+
+        $commande = Commande::create([
+            'id_client' => $client->id_client,
+            'date_commande' => now(),
+            'statut' => 'en_attente',
+            'payment_status' => 'pending',
+            'total' => 50,
+        ]);
+
+        LigneCommande::create([
+            'id_commande' => $commande->id_commande,
+            'id_produit' => $product->id_produit,
+            'quantite' => 1,
+            'prix_unitaire' => 50,
+        ]);
+
+        $this->withToken($token)->postJson('/api/v1/reviews', [
+            'id_produit' => $product->id_produit,
+            'note' => 5,
+            'commentaire' => 'Commande faite et produit tres bien',
+        ])->assertCreated();
+    }
+
     public function test_review_owner_can_update_and_delete_review(): void
     {
         $client = Client::create($this->clientData('review-owner@example.com'));

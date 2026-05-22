@@ -122,9 +122,7 @@ const ProductDetail = () => {
       .filter(Boolean)
       .filter((value, index, array) => array.indexOf(value) === index)
 
-    return images.length > 0
-      ? images
-      : ['https://via.placeholder.com/900x900?text=Solarlight']
+    return images
   }, [image, product])
 
   useEffect(() => {
@@ -132,6 +130,7 @@ const ProductDetail = () => {
   }, [galleryImages])
 
   const activeImage = galleryImages[activeImageIndex] || galleryImages[0]
+  const hasProductImages = galleryImages.length > 0
 
   const specifications = useMemo(() => {
     const entries = Object.entries(product?.specifications || {})
@@ -222,6 +221,7 @@ const ProductDetail = () => {
   )
 
   const showGalleryNavigation = galleryImages.length > 1
+  const canReview = Boolean(user)
 
   const renderStars = (rating) => (
     <div className="stars">
@@ -278,59 +278,64 @@ const ProductDetail = () => {
         </div>
 
         <div className="product-detail-grid">
-          <section className="detail-gallery glass-card">
-            <div className="detail-main-image">
-              <button type="button" className="detail-zoom-btn" aria-label="Agrandir l image">
-                <FaSearchPlus />
-              </button>
-              {showGalleryNavigation ? (
-                <>
-                  <button
-                    type="button"
-                    className="gallery-nav gallery-nav-prev"
-                    onClick={goToPreviousImage}
-                    aria-label="Image precedente"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  <button
-                    type="button"
-                    className="gallery-nav gallery-nav-next"
-                    onClick={goToNextImage}
-                    aria-label="Image suivante"
-                  >
-                    <FaChevronRight />
-                  </button>
-                </>
-              ) : null}
-              <img
-                src={activeImage}
-                alt={product.nom || product.name}
-                onError={(event) => {
-                  event.currentTarget.src = PRODUCT_IMAGE_FALLBACK
-                }}
-              />
-            </div>
-
-            <div className="detail-thumbs">
-              {galleryImages.map((galleryImage, index) => (
-                <button
-                  key={`${galleryImage}-${index}`}
-                  type="button"
-                  className={`detail-thumb ${activeImageIndex === index ? 'active' : ''}`}
-                  onClick={() => setActiveImageIndex(index)}
-                >
-                  <img
-                    src={galleryImage}
-                    alt={`${product.nom || product.name} vue ${index + 1}`}
-                    onError={(event) => {
-                      event.currentTarget.src = PRODUCT_IMAGE_FALLBACK
-                    }}
-                  />
+          {hasProductImages ? (
+            <section className="detail-gallery glass-card">
+              <div className="detail-main-image">
+                <button type="button" className="detail-zoom-btn" aria-label="Agrandir l image">
+                  <FaSearchPlus />
                 </button>
-              ))}
-            </div>
-          </section>
+                {showGalleryNavigation ? (
+                  <>
+                    <span className="gallery-count">
+                      {activeImageIndex + 1}/{galleryImages.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="gallery-nav gallery-nav-prev"
+                      onClick={goToPreviousImage}
+                      aria-label="Image precedente"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    <button
+                      type="button"
+                      className="gallery-nav gallery-nav-next"
+                      onClick={goToNextImage}
+                      aria-label="Image suivante"
+                    >
+                      <FaChevronRight />
+                    </button>
+                  </>
+                ) : null}
+                <img
+                  src={activeImage}
+                  alt={product.nom || product.name}
+                  onError={(event) => {
+                    event.currentTarget.src = PRODUCT_IMAGE_FALLBACK
+                  }}
+                />
+              </div>
+
+              <div className="detail-thumbs">
+                {galleryImages.map((galleryImage, index) => (
+                  <button
+                    key={`${galleryImage}-${index}`}
+                    type="button"
+                    className={`detail-thumb ${activeImageIndex === index ? 'active' : ''}`}
+                    onClick={() => setActiveImageIndex(index)}
+                  >
+                    <img
+                      src={galleryImage}
+                      alt={`${product.nom || product.name} vue ${index + 1}`}
+                      onError={(event) => {
+                        event.currentTarget.src = PRODUCT_IMAGE_FALLBACK
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="detail-panel glass-card">
             <span className="chip detail-category-chip">{product.categorie?.nom || 'Lampadaires solaires'}</span>
@@ -464,13 +469,6 @@ const ProductDetail = () => {
                     ))}
                   </div>
                 </div>
-                <img
-                  src={activeImage}
-                  alt={product.nom || product.name}
-                  onError={(event) => {
-                    event.currentTarget.src = PRODUCT_IMAGE_FALLBACK
-                  }}
-                />
               </article>
             </div>
           ) : activeTab === 'specifications' ? (
@@ -516,33 +514,43 @@ const ProductDetail = () => {
                   )}
                 </section>
 
-                <form className="product-review-form" onSubmit={handleReviewSubmit}>
-                  <h3>Laisser un avis</h3>
-                  <label>
-                    <span>Note</span>
-                    <select name="note" value={reviewForm.note} onChange={handleReviewChange} required>
-                      <option value="5">5 etoiles</option>
-                      <option value="4">4 etoiles</option>
-                      <option value="3">3 etoiles</option>
-                      <option value="2">2 etoiles</option>
-                      <option value="1">1 etoile</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Commentaire</span>
-                    <textarea
-                      name="commentaire"
-                      rows="5"
-                      value={reviewForm.commentaire}
-                      onChange={handleReviewChange}
-                      placeholder="Votre avis sur ce produit"
-                      required
-                    />
-                  </label>
-                  <button type="submit" disabled={submittingReview}>
-                    {submittingReview ? 'Envoi en cours...' : 'Envoyer mon avis'}
-                  </button>
-                </form>
+                {canReview ? (
+                  <form className="product-review-form" onSubmit={handleReviewSubmit}>
+                    <h3>Laisser un avis</h3>
+                    <label>
+                      <span>Note</span>
+                      <select name="note" value={reviewForm.note} onChange={handleReviewChange} required>
+                        <option value="5">5 etoiles</option>
+                        <option value="4">4 etoiles</option>
+                        <option value="3">3 etoiles</option>
+                        <option value="2">2 etoiles</option>
+                        <option value="1">1 etoile</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Commentaire</span>
+                      <textarea
+                        name="commentaire"
+                        rows="5"
+                        value={reviewForm.commentaire}
+                        onChange={handleReviewChange}
+                        placeholder="Votre avis sur ce produit"
+                        required
+                      />
+                    </label>
+                    <button type="submit" disabled={submittingReview}>
+                      {submittingReview ? 'Envoi en cours...' : 'Envoyer mon avis'}
+                    </button>
+                  </form>
+                ) : (
+                  <aside className="product-review-form product-review-locked">
+                    <h3>Avis clients</h3>
+                    <p>Connectez-vous et commandez ce produit pour partager votre avis.</p>
+                    <button type="button" onClick={() => navigate('/login')}>
+                      Se connecter
+                    </button>
+                  </aside>
+                )}
               </div>
             </div>
           )}

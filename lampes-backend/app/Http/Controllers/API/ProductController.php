@@ -66,7 +66,7 @@ class ProductController extends Controller
             $cacheKey = 'products.index.'.md5(json_encode($request->query()));
 
             $data = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($request) {
-                $query = $this->baseProductQuery();
+                $query = $this->baseProductQuery(true);
 
                 if ($request->filled('categorie_id')) {
                     $query->where('id_categorie', $request->integer('categorie_id'));
@@ -135,7 +135,7 @@ class ProductController extends Controller
     {
         try {
             $products = Cache::remember('products.best_sellers', now()->addMinutes(5), function () {
-                return $this->baseProductQuery()
+                return $this->baseProductQuery(true)
                     ->withCount('ligneCommandes')
                     ->orderByDesc('ligne_commandes_count')
                     ->limit(6)
@@ -160,7 +160,7 @@ class ProductController extends Controller
     {
         try {
             $products = Cache::remember('products.nouveautes', now()->addMinutes(5), function () {
-                return $this->baseProductQuery()
+                return $this->baseProductQuery(true)
                     ->latest()
                     ->limit(8)
                     ->get()
@@ -184,7 +184,7 @@ class ProductController extends Controller
     {
         try {
             $products = Cache::remember('products.featured', now()->addMinutes(5), function () {
-                return $this->baseProductQuery()
+                return $this->baseProductQuery(true)
                     ->where('stock', '>', 0)
                     ->orderByDesc('created_at')
                     ->limit(5)
@@ -217,7 +217,7 @@ class ProductController extends Controller
     {
         try {
             $produit = $this->findProduct($id);
-            $produit = $this->baseProductQuery()
+            $produit = $this->baseProductQuery(true)
                 ->with(['avis.client'])
                 ->withSum('ligneCommandes', 'quantite')
                 ->where('id_produit', $produit->id_produit)
@@ -382,9 +382,10 @@ class ProductController extends Controller
     }
 
     // Prepare la requete commune avec les relations et calculs necessaires.
-    protected function baseProductQuery()
+    protected function baseProductQuery(bool $activeOnly = false)
     {
         return Produit::query()
+            ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
             ->with('categorie')
             ->withCount('avis')
             ->withAvg('avis', 'note');

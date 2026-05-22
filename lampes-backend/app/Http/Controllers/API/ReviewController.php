@@ -34,7 +34,7 @@ class ReviewController extends Controller
         try {
             $hasPurchasedProduct = Commande::query()
                 ->where('id_client', $request->user()->id_client)
-                ->whereIn('statut', ['livree', 'payee'])
+                ->whereNotIn('statut', ['annulee', 'refusee'])
                 ->whereHas('ligneCommandes', function ($query) use ($request) {
                     $query->where('id_produit', $request->id_produit);
                 })

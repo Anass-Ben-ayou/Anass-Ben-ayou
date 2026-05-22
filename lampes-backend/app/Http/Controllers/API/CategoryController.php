@@ -16,7 +16,8 @@ class CategoryController extends Controller
     public function index()
     {
         try {
-            $categories = Categorie::withCount('produits')
+            $categories = Categorie::withCount(['produits' => fn ($query) => $query->where('status', 'active')])
+                ->whereHas('produits', fn ($query) => $query->where('status', 'active'))
                 ->orderBy('nom')
                 ->get()
                 ->map(fn ($categorie) => (new CategoryResource($categorie))->resolve());
@@ -37,10 +38,9 @@ class CategoryController extends Controller
     public function populaires()
     {
         try {
-            $categories = Categorie::withCount('produits')
-                ->has('produits')
+            $categories = Categorie::withCount(['produits' => fn ($query) => $query->where('status', 'active')])
+                ->whereHas('produits', fn ($query) => $query->where('status', 'active'))
                 ->orderByDesc('produits_count')
-                ->limit(6)
                 ->get()
                 ->map(fn ($categorie) => (new CategoryResource($categorie))->resolve());
 
@@ -61,8 +61,8 @@ class CategoryController extends Controller
     {
         try {
             $categorie = $this->findCategory($id);
-            $categorie->load(['produits' => fn ($query) => $query->with('categorie')->latest()->limit(8)]);
-            $categorie->loadCount('produits');
+            $categorie->load(['produits' => fn ($query) => $query->with('categorie')->where('status', 'active')->latest()->limit(8)]);
+            $categorie->loadCount(['produits' => fn ($query) => $query->where('status', 'active')]);
 
             return response()->json([
                 'success' => true,
@@ -93,7 +93,7 @@ class CategoryController extends Controller
 
         try {
             $categorie = $this->findCategory($id);
-            $query = $categorie->produits()->with('categorie');
+            $query = $categorie->produits()->with('categorie')->where('status', 'active');
 
             if ($request->filled('search')) {
                 $search = $request->string('search')->toString();
