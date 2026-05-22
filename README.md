@@ -1,16 +1,31 @@
-## Hi there 👋
+# Hi 👋 I'm Anass Ben Ayou
 
-<!--
-**Anass-Ben-ayou/Anass-Ben-ayou** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+💻 Full Stack Developer  
+🎓 Web Full Stack Development Student  
+🚀 Passionate about building modern web applications
 
-Here are some ideas to get you started:
+## 🛠 Technologies & Tools
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+- React.js
+- Laravel
+- PHP
+- Node.js
+- Express.js
+- JavaScript
+- HTML
+- CSS
+- Bootstrap
+- MySQL
+- APIs
+- Git & GitHub
+
+## 📚 Currently
+
+- Web Full Stack Intern at MCM Technology
+- Working on web projects and improving my skills
+- Learning new technologies
+
+## 📫 Connect with me
+
+LinkedIn:
+https://linkedin.com/in/anass-ben-ayou-dev
