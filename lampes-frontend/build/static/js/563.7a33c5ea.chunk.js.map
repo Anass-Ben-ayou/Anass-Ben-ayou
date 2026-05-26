@@ -1,0 +1,1 @@
+{"version":3,"file":"static/js/563.7a33c5ea.chunk.js","mappings":"4JAEA,Q,OAAuB,O","sources":["components/pages/Products.jsx"],"sourcesContent":["import Boutique from './Boutique'\n\nexport default Boutique\n"],"names":[],"sourceRoot":""}
