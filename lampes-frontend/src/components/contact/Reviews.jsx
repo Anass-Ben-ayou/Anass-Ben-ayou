@@ -1,18 +1,20 @@
 import React, { useState } from 'react'
-import { FaArrowRight, FaComments, FaStar } from 'react-icons/fa'
+import { FaArrowRight, FaStar } from 'react-icons/fa'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 import { productService } from '../../services/productService'
 import './Reviews.css'
 
-// Displays public testimonials and allows sending a new one.
-const Reviews = ({ reviews, loading, error }) => {
+// Displays public product reviews and allows sending a new one.
+const Reviews = ({ reviews, loading, error, purchasedProducts = [], loadingPurchasedProducts = false, user, onReviewCreated }) => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    customer_name: '',
-    email: '',
+    id_produit: '',
     comment: '',
     rating: 5
   })
   const [submitting, setSubmitting] = useState(false)
+  const hasReviewableProducts = purchasedProducts.some((product) => !product.has_review)
 
   const handleChange = (event) => {
     setFormData((current) => ({
@@ -23,19 +25,36 @@ const Reviews = ({ reviews, loading, error }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+
+    if (!user) {
+      toast.error('Veuillez vous connecter pour laisser un avis produit')
+      navigate('/login')
+      return
+    }
+
+    if (!formData.id_produit) {
+      toast.error('Choisissez un produit achete')
+      return
+    }
+
     setSubmitting(true)
 
     try {
-      const response = await productService.createSiteReview(formData)
-      toast.success(response.message || 'Avis envoye')
+      const response = await productService.createProductReview({
+        id_produit: Number(formData.id_produit),
+        note: Number(formData.rating),
+        commentaire: formData.comment.trim()
+      })
+      toast.success(response.message || 'Avis ajoute avec succes')
       setFormData({
-        customer_name: '',
-        email: '',
+        id_produit: '',
         comment: '',
         rating: 5
       })
+      await onReviewCreated?.()
     } catch (submitError) {
-      toast.error(submitError.response?.data?.message || 'Impossible d envoyer l avis')
+      const firstError = Object.values(submitError.response?.data?.errors || {})?.[0]?.[0]
+      toast.error(firstError || submitError.response?.data?.message || 'Impossible d envoyer l avis')
     } finally {
       setSubmitting(false)
     }
@@ -45,8 +64,8 @@ const Reviews = ({ reviews, loading, error }) => {
     <section className="reviews-panel">
       <div className="glass-card reviews-list-panel">
         <div className="reviews-heading">
-          <span className="chip"><FaStar /> Avis clients</span>
-          <h2>Ce que nos clients disent</h2>
+          <span className="chip"><FaStar /> Avis produits</span>
+          <h2>Ce que nos clients pensent des produits</h2>
         </div>
 
         {loading ? (
@@ -54,7 +73,7 @@ const Reviews = ({ reviews, loading, error }) => {
         ) : error ? (
           <p>{error}</p>
         ) : reviews.length === 0 ? (
-          <p className="reviews-empty">Aucun temoignage pour le moment. Le prochain message envoye apparaitra ici.</p>
+          <p className="reviews-empty">Aucun avis produit pour le moment. Le prochain avis envoye apparaitra ici.</p>
         ) : (
           <div className="reviews-list">
             {reviews.map((review) => (
@@ -75,14 +94,29 @@ const Reviews = ({ reviews, loading, error }) => {
       </div>
 
       <form className="glass-card review-form" onSubmit={handleSubmit}>
-        <h3><FaComments /> Laisser un temoignage</h3>
+        <h3><FaStar /> Laisser un avis</h3>
         <label>
-          <span>Nom</span>
-          <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Votre nom" required />
-        </label>
-        <label>
-          <span>Email</span>
-          <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Votre email" />
+          <span>Produit achete</span>
+          <select
+            name="id_produit"
+            value={formData.id_produit}
+            onChange={handleChange}
+            required
+            disabled={!user || loadingPurchasedProducts || !hasReviewableProducts}
+          >
+            <option value="">
+              {loadingPurchasedProducts
+                ? 'Chargement de vos produits...'
+                : user
+                  ? 'Choisir un produit'
+                  : 'Connectez-vous pour choisir un produit'}
+            </option>
+            {purchasedProducts.map((product) => (
+              <option key={product.id} value={product.id} disabled={product.has_review}>
+                {product.name}{product.has_review ? ' - avis deja envoye' : ''}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           <span>Note</span>
@@ -95,13 +129,20 @@ const Reviews = ({ reviews, loading, error }) => {
           </select>
         </label>
         <label>
-          <span>Votre commentaire</span>
-          <textarea name="comment" rows="5" value={formData.comment} onChange={handleChange} placeholder="Partagez votre experience..." required />
+          <span>Votre avis sur le produit</span>
+          <textarea name="comment" rows="5" value={formData.comment} onChange={handleChange} placeholder="Partagez votre avis sur le produit..." required />
         </label>
         <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? 'Envoi en cours...' : 'Envoyer mon avis'}
+          {submitting ? 'Envoi en cours...' : 'Publier mon avis'}
           <FaArrowRight />
         </button>
+        {!user ? (
+          <p className="review-form-note">Connectez-vous pour publier un avis sur un produit achete.</p>
+        ) : !loadingPurchasedProducts && purchasedProducts.length === 0 ? (
+          <p className="review-form-note">Aucun produit achete disponible pour laisser un avis.</p>
+        ) : !loadingPurchasedProducts && !hasReviewableProducts ? (
+          <p className="review-form-note">Vous avez deja laisse un avis pour tous vos produits achetes.</p>
+        ) : null}
       </form>
     </section>
   )

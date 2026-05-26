@@ -42,6 +42,7 @@ const Orders = () => {
                   <thead>
                     <tr>
                       <th>Commande</th>
+                      <th>Produits</th>
                       <th>Montant</th>
                       <th>Statut</th>
                       <th>Paiement</th>
@@ -53,6 +54,13 @@ const Orders = () => {
                     {orders.length > 0 ? orders.map((order) => (
                       <tr key={order.id_commande}>
                         <td>#{order.id_commande}</td>
+                        <td>
+                          {(order.ligne_commandes || order.ligneCommandes || []).map((line) => (
+                            <div key={line.id_ligne_commande || `${order.id_commande}-${line.id_produit}`}>
+                              {line.produit?.nom || 'Produit'} x{line.quantite}
+                            </div>
+                          ))}
+                        </td>
                         <td>{new Intl.NumberFormat('fr-MA', { style: 'currency', currency: order.currency || 'MAD' }).format(order.total || 0)}</td>
                         <td>{order.statut}</td>
                         <td>{order.payment_status || order.paiement?.payment_status || '-'}</td>
@@ -66,7 +74,7 @@ const Orders = () => {
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="6">Aucune commande trouvee.</td>
+                        <td colSpan="7">Aucune commande trouvee.</td>
                       </tr>
                     )}
                   </tbody>

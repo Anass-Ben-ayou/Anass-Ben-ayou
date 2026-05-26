@@ -1,11 +1,11 @@
-export const PRODUCT_IMAGE_FALLBACK = 'https://via.placeholder.com/900x900?text=Solarlight'
-
 const API_URL = (
   process.env.REACT_APP_API_URL ||
   'http://localhost:8000/api/v1'
 ).replace(/\/+$/, '')
 
 const API_ORIGIN = API_URL.replace(/\/api(?:\/v1)?$/, '')
+
+export const PRODUCT_IMAGE_FALLBACK = `${API_ORIGIN}/catalog-import/image105.png`
 
 const normalizeImageUrl = (value) => {
   if (!value || typeof value !== 'string') {
@@ -40,5 +40,5 @@ export const resolveProductImage = (product) => {
     || product.image_url
     || product.image
 
-  return normalizeImageUrl(image)
+  return normalizeImageUrl(image) || PRODUCT_IMAGE_FALLBACK
 }

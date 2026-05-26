@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -56,6 +56,7 @@ const fallbackSpecs = [
 
 const ProductDetail = () => {
   const { id } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [product, setProduct] = useState(null)
@@ -66,6 +67,8 @@ const ProductDetail = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [reviews, setReviews] = useState([])
   const [loadingReviews, setLoadingReviews] = useState(false)
+  const [checkingReviewAccess, setCheckingReviewAccess] = useState(false)
+  const [hasPurchasedProduct, setHasPurchasedProduct] = useState(false)
   const [submittingReview, setSubmittingReview] = useState(false)
   const [reviewForm, setReviewForm] = useState({
     note: '5',
@@ -111,6 +114,49 @@ const ProductDetail = () => {
   useEffect(() => {
     refreshProductReviews()
   }, [refreshProductReviews])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab')
+
+    if (tab === 'description' || tab === 'specifications' || tab === 'avis') {
+      setActiveTab(tab)
+    }
+  }, [location.search])
+
+  useEffect(() => {
+    if (!user || !product) {
+      setHasPurchasedProduct(false)
+      setCheckingReviewAccess(false)
+      return
+    }
+
+    const checkReviewAccess = async () => {
+      setCheckingReviewAccess(true)
+
+      try {
+        const response = await api.get('/orders')
+        const orders = Array.isArray(response.data?.data?.data) ? response.data.data.data : []
+        const productId = Number(product.id_produit || product.id)
+        const purchased = orders.some((order) => {
+          if (order.statut === 'annulee' || order.statut === 'refusee') {
+            return false
+          }
+
+          const lines = order.ligne_commandes || order.ligneCommandes || []
+          return lines.some((line) => Number(line.id_produit || line.produit?.id_produit || line.produit?.id) === productId)
+        })
+
+        setHasPurchasedProduct(purchased)
+      } catch (error) {
+        setHasPurchasedProduct(false)
+      } finally {
+        setCheckingReviewAccess(false)
+      }
+    }
+
+    checkReviewAccess()
+  }, [product, user])
 
   const image = resolveProductImage(product)
   const galleryImages = useMemo(() => {
@@ -221,7 +267,8 @@ const ProductDetail = () => {
   )
 
   const showGalleryNavigation = galleryImages.length > 1
-  const canReview = Boolean(user)
+  const hasReviewedProduct = reviews.some((review) => Number(review.id_client || review.client?.id_client || review.client?.id) === Number(user?.id_client || user?.id))
+  const canReview = Boolean(user && hasPurchasedProduct && !hasReviewedProduct)
 
   const renderStars = (rating) => (
     <div className="stars">
@@ -346,11 +393,11 @@ const ProductDetail = () => {
                 {[...Array(5)].map((_, index) => (
                   <FaStar
                     key={index}
-                    color={index < Math.round(product.note_moyenne || 4) ? '#f3b232' : '#e6dccd'}
+                    color={index < Math.round(product.note_moyenne || 0) ? '#f3b232' : '#e6dccd'}
                   />
                 ))}
               </div>
-              <span>({product.nombre_avis || 128} avis)</span>
+              <span>({product.nombre_avis || 0} avis)</span>
             </div>
 
             <div className="product-price-row">
@@ -516,7 +563,7 @@ const ProductDetail = () => {
 
                 {canReview ? (
                   <form className="product-review-form" onSubmit={handleReviewSubmit}>
-                    <h3>Laisser un avis</h3>
+                    <h3>Laisser un avis sur ce produit</h3>
                     <label>
                       <span>Note</span>
                       <select name="note" value={reviewForm.note} onChange={handleReviewChange} required>
@@ -542,6 +589,24 @@ const ProductDetail = () => {
                       {submittingReview ? 'Envoi en cours...' : 'Envoyer mon avis'}
                     </button>
                   </form>
+                ) : checkingReviewAccess ? (
+                  <aside className="product-review-form product-review-locked">
+                    <h3>Verification</h3>
+                    <p>Nous verifions si ce produit existe dans vos commandes.</p>
+                  </aside>
+                ) : hasReviewedProduct ? (
+                  <aside className="product-review-form product-review-locked">
+                    <h3>Avis deja envoye</h3>
+                    <p>Votre avis pour ce produit est deja affiche dans la section avis.</p>
+                  </aside>
+                ) : user ? (
+                  <aside className="product-review-form product-review-locked">
+                    <h3>Avis reserve aux acheteurs</h3>
+                    <p>Vous pouvez laisser un avis apres avoir achete ce produit.</p>
+                    <button type="button" onClick={() => navigate('/dashboard?section=orders')}>
+                      Voir mes commandes
+                    </button>
+                  </aside>
                 ) : (
                   <aside className="product-review-form product-review-locked">
                     <h3>Avis clients</h3>

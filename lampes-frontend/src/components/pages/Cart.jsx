@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FaCcMastercard, FaCcVisa, FaCreditCard, FaHeadset, FaLock, FaShieldAlt, FaTruck } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 import { api } from '../../services/api'
+import { notifyCartUpdated } from '../../services/cartEvents'
 import CartItem from '../cart/CartItem'
 import './Cart.css'
 
@@ -17,6 +18,7 @@ const FREE_DELIVERY_THRESHOLD = 500
 const DELIVERY_FEE = 30
 
 const Cart = () => {
+  const navigate = useNavigate()
   const [cart, setCart] = useState({ items: [], total: 0, total_items: 0 })
   const [loading, setLoading] = useState(true)
   const [submittingOrder, setSubmittingOrder] = useState(false)
@@ -32,7 +34,12 @@ const Cart = () => {
     ville: '',
     code_postal: '',
     pays: 'Maroc',
-    methode_paiement: 'livraison'
+    methode_paiement: 'livraison',
+    card_name: '',
+    card_number: '',
+    card_month: '',
+    card_year: '',
+    card_cvc: ''
   })
 
   useEffect(() => {
@@ -51,10 +58,6 @@ const Cart = () => {
         }
         setCart(cartResponse.data.data)
         setPaymentConfig(paymentData)
-        setCheckoutForm((current) => ({
-          ...current,
-          methode_paiement: paymentData.card_enabled ? 'carte' : 'livraison'
-        }))
       } catch (error) {
         toast.error(error.response?.data?.message || 'Impossible de charger le panier')
       } finally {
@@ -119,6 +122,21 @@ const Cart = () => {
       return
     }
 
+    if (checkoutForm.methode_paiement === 'carte') {
+      const digitsOnly = checkoutForm.card_number.replace(/\D/g, '')
+
+      if (
+        !checkoutForm.card_name.trim() ||
+        digitsOnly.length < 13 ||
+        !checkoutForm.card_month.trim() ||
+        !checkoutForm.card_year.trim() ||
+        !checkoutForm.card_cvc.trim()
+      ) {
+        toast.error('Veuillez completer les informations de carte bancaire')
+        return
+      }
+    }
+
     setSubmittingOrder(true)
 
     try {
@@ -145,8 +163,11 @@ const Cart = () => {
 
       await api.post('/orders', checkoutForm)
 
-      await refreshCart()
+      await api.delete('/cart')
+      setCart({ items: [], total: 0, total_items: 0 })
+      notifyCartUpdated()
       toast.success('Commande creee avec succes')
+      navigate('/dashboard?section=orders')
     } catch (error) {
       const validationErrors = error.response?.data?.errors
       const firstValidationError = validationErrors
@@ -254,42 +275,14 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {checkoutForm.methode_paiement === 'carte' ? (
-                  <div className="demo-card-fields" aria-label="Carte de test">
-                    <div className="checkout-field">
-                      <label htmlFor="card_name">Nom sur la carte</label>
-                      <input id="card_name" value="SOLARLIGHT CLIENT" readOnly />
-                    </div>
-                    <div className="checkout-field">
-                      <label htmlFor="card_number">Numero de carte</label>
-                      <input id="card_number" value="4242 4242 4242 4242" readOnly />
-                    </div>
-                    <div className="checkout-grid checkout-grid-card">
-                      <div className="checkout-field">
-                        <label htmlFor="card_month">Mois</label>
-                        <input id="card_month" value="12" readOnly />
-                      </div>
-                      <div className="checkout-field">
-                        <label htmlFor="card_year">Annee</label>
-                        <input id="card_year" value="2028" readOnly />
-                      </div>
-                      <div className="checkout-field">
-                        <label htmlFor="card_cvc">CVC</label>
-                        <input id="card_cvc" value="123" readOnly />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
                 <div className="checkout-methods">
-                  <label className={`checkout-method ${checkoutForm.methode_paiement === 'carte' ? 'selected' : ''} ${!paymentConfig.card_enabled ? 'disabled' : ''}`}>
+                  <label className={`checkout-method ${checkoutForm.methode_paiement === 'carte' ? 'selected' : ''}`}>
                     <input
                       type="radio"
                       name="methode_paiement"
                       value="carte"
                       checked={checkoutForm.methode_paiement === 'carte'}
                       onChange={handleCheckoutChange}
-                      disabled={!paymentConfig.card_enabled}
                     />
                     <span>
                       <span className="checkout-method-title">
@@ -322,6 +315,33 @@ const Cart = () => {
                     </span>
                   </label>
                 </div>
+
+                {checkoutForm.methode_paiement === 'carte' ? (
+                  <div className="demo-card-fields" aria-label="Carte de test">
+                    <div className="checkout-field">
+                      <label htmlFor="card_name">Nom sur la carte</label>
+                      <input id="card_name" name="card_name" value={checkoutForm.card_name} onChange={handleCheckoutChange} placeholder="SOLARLIGHT CLIENT" required />
+                    </div>
+                    <div className="checkout-field">
+                      <label htmlFor="card_number">Numero de carte</label>
+                      <input id="card_number" name="card_number" value={checkoutForm.card_number} onChange={handleCheckoutChange} inputMode="numeric" autoComplete="cc-number" placeholder="4242 4242 4242 4242" required />
+                    </div>
+                    <div className="checkout-grid checkout-grid-card">
+                      <div className="checkout-field">
+                        <label htmlFor="card_month">Mois</label>
+                        <input id="card_month" name="card_month" value={checkoutForm.card_month} onChange={handleCheckoutChange} inputMode="numeric" autoComplete="cc-exp-month" placeholder="12" required />
+                      </div>
+                      <div className="checkout-field">
+                        <label htmlFor="card_year">Annee</label>
+                        <input id="card_year" name="card_year" value={checkoutForm.card_year} onChange={handleCheckoutChange} inputMode="numeric" autoComplete="cc-exp-year" placeholder="2028" required />
+                      </div>
+                      <div className="checkout-field">
+                        <label htmlFor="card_cvc">CVC</label>
+                        <input id="card_cvc" name="card_cvc" value={checkoutForm.card_cvc} onChange={handleCheckoutChange} inputMode="numeric" autoComplete="cc-csc" placeholder="123" required />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <button
                   type="submit"

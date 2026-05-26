@@ -14,7 +14,7 @@ const CollectionCard = ({ collection, featured = false }) => {
         <span className="chip">Collection</span>
         <h3>{collection.title}</h3>
         <p>{collection.description}</p>
-        <Link to={`/collections/${collection.slug || collection.id}`} className="btn-outline">
+        <Link to={`/boutique?collection=${encodeURIComponent(collection.slug || collection.id)}`} className="btn-outline">
           Voir collection <FaArrowRight />
         </Link>
       </div>

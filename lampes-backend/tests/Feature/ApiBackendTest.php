@@ -332,6 +332,30 @@ class ApiBackendTest extends TestCase
         ])->assertCreated();
     }
 
+    public function test_public_testimonials_include_product_reviews(): void
+    {
+        $client = Client::create($this->clientData('review-contact@example.com'));
+        $product = $this->createProduct('Lampe Contact Review');
+
+        Avis::create([
+            'note' => 5,
+            'commentaire' => 'Cette lampe achetee est excellente pour la terrasse',
+            'date_avis' => now(),
+            'id_client' => $client->id_client,
+            'id_produit' => $product->id_produit,
+        ]);
+
+        $this->getJson('/api/reviews')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonFragment([
+                'source' => 'product',
+                'product_name' => 'Lampe Contact Review',
+                'comment' => 'Cette lampe achetee est excellente pour la terrasse',
+                'rating' => 5,
+            ]);
+    }
+
     public function test_review_owner_can_update_and_delete_review(): void
     {
         $client = Client::create($this->clientData('review-owner@example.com'));

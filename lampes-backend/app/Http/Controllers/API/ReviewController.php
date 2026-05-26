@@ -12,6 +12,49 @@ use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
 {
+    public function purchasedProducts(Request $request)
+    {
+        try {
+            $reviewedProductIds = Avis::query()
+                ->where('id_client', $request->user()->id_client)
+                ->pluck('id_produit')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $reviewedLookup = array_flip($reviewedProductIds);
+
+            $products = Commande::with('ligneCommandes.produit')
+                ->where('id_client', $request->user()->id_client)
+                ->whereNotIn('statut', ['annulee', 'refusee'])
+                ->latest('date_commande')
+                ->get()
+                ->flatMap(fn (Commande $commande) => $commande->ligneCommandes)
+                ->filter(fn ($line) => $line->produit !== null)
+                ->unique('id_produit')
+                ->map(function ($line) use ($reviewedLookup) {
+                    return [
+                        'id' => $line->id_produit,
+                        'id_produit' => $line->id_produit,
+                        'name' => SanitizesInput::plain($line->produit->nom, 255),
+                        'nom' => SanitizesInput::plain($line->produit->nom, 255),
+                        'has_review' => isset($reviewedLookup[(int) $line->id_produit]),
+                    ];
+                })
+                ->sortBy('name')
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $products,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement des produits achetes',
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         $request->merge([

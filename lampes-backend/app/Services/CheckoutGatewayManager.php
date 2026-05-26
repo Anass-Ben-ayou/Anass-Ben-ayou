@@ -114,11 +114,11 @@ class CheckoutGatewayManager
     protected function createDemoCheckout(array $context): array
     {
         $sessionId = 'demo_checkout_'.Str::lower(Str::random(24));
-        $successUrl = rtrim((string) config('payments.frontend_success_url'), '/');
+        $callbackUrl = rtrim((string) config('payments.callback_url'), '/');
 
         return [
             'payment_gateway' => 'demo',
-            'checkout_url' => $successUrl.'?session_id='.$sessionId,
+            'checkout_url' => $callbackUrl.'?gateway=demo&session_id='.$sessionId,
             'gateway_session_id' => $sessionId,
             'gateway_reference' => $sessionId,
             'amount' => $context['amount'],

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { api } from '../../services/api'
+import { notifyCartUpdated } from '../../services/cartEvents'
 import './CheckoutStatus.css'
 
 const contentByPath = {
@@ -27,25 +28,30 @@ const CheckoutStatus = () => {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [order, setOrder] = useState(null)
-  const [confirmed, setConfirmed] = useState(false)
   const view = useMemo(() => contentByPath[location.pathname] || contentByPath['/checkout/failed'], [location.pathname])
 
   useEffect(() => {
-    const orderId = new URLSearchParams(location.search).get('order_id')
+    const params = new URLSearchParams(location.search)
+    const orderId = params.get('order_id')
+    const sessionId = params.get('session_id')
 
-    if (!orderId || location.pathname === '/checkout/failed') {
+    if ((!orderId && !sessionId) || location.pathname === '/checkout/failed') {
       return
     }
 
-    const loadOrder = async () => {
+    const finalizeCheckout = async () => {
       setLoading(true)
 
       try {
-        const response = await api.get(`/orders/${orderId}`)
-        setOrder(response.data?.data || null)
-        setConfirmed(location.pathname === '/checkout/success')
+        const response = orderId
+          ? await api.get(`/orders/${orderId}`)
+          : await api.post('/checkout/payment-callback', { session_id: sessionId })
+
+        const confirmedOrder = response.data?.data || null
+        setOrder(confirmedOrder)
         setMessage(view.fallbackMessage)
         if (location.pathname === '/checkout/success') {
+          notifyCartUpdated()
           toast.success('Paiement confirme')
         }
       } catch (error) {
@@ -55,7 +61,7 @@ const CheckoutStatus = () => {
       }
     }
 
-    loadOrder()
+    finalizeCheckout()
   }, [location.pathname, location.search, view.fallbackMessage])
 
   return (
@@ -80,8 +86,8 @@ const CheckoutStatus = () => {
           )}
 
           <div className="checkout-status-actions">
-            <Link to={confirmed ? '/orders' : '/checkout'} className="btn-primary">
-              {confirmed ? 'Voir mes commandes' : 'Retour au paiement'}
+            <Link to="/dashboard?section=orders" className="btn-primary">
+              Voir mes commandes
             </Link>
             <Link to="/boutique" className="btn-outline">Continuer mes achats</Link>
           </div>

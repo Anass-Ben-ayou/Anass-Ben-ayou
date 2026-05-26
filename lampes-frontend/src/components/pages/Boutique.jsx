@@ -1,16 +1,19 @@
 import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { FaHeadset, FaLock, FaShieldAlt, FaSpinner, FaThLarge, FaThList, FaTruck } from 'react-icons/fa'
+import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../products/ProductCard'
 import ProductFilters from '../products/ProductFilters'
 import ScrollReveal from '../common/ScrollReveal'
 import { productService } from '../../services/productService'
 import './Boutique.css'
 
-const PAGE_SIZE = 8
+const PAGE_SIZE = 2
+const LOAD_MORE_ROOT_MARGIN = '720px 0px'
 
 const initialFilters = {
   search: '',
   categorie_id: '',
+  collection: '',
   prix_min: '',
   prix_max: '',
   sort: 'latest'
@@ -25,14 +28,22 @@ const boutiqueBenefits = [
 
 // Renders the boutique catalog with server pagination and infinite scroll.
 const Boutique = () => {
-  const [filters, setFilters] = useState(initialFilters)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [filters, setFilters] = useState(() => ({
+    ...initialFilters,
+    collection: searchParams.get('collection') || '',
+    categorie_id: searchParams.get('categorie_id') || '',
+    search: searchParams.get('search') || ''
+  }))
   const [categories, setCategories] = useState([])
+  const [collections, setCollections] = useState([])
   const [products, setProducts] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [viewMode, setViewMode] = useState('grid')
   const loadMoreRef = useRef(null)
   const latestRequestRef = useRef(0)
   const deferredFilters = useDeferredValue(filters)
@@ -40,26 +51,54 @@ const Boutique = () => {
   useEffect(() => {
     let cancelled = false
 
-    const loadCategories = async () => {
+    const loadFilters = async () => {
       try {
-        const response = await productService.getCategories()
+        const [categoryResponse, collectionResponse] = await Promise.all([
+          productService.getCategories(),
+          productService.getCollections()
+        ])
 
         if (!cancelled) {
-          setCategories(Array.isArray(response) ? response : [])
+          setCategories(Array.isArray(categoryResponse) ? categoryResponse : [])
+          setCollections(Array.isArray(collectionResponse) ? collectionResponse : [])
         }
       } catch (fetchError) {
         if (!cancelled) {
           setCategories([])
+          setCollections([])
         }
       }
     }
 
-    loadCategories()
+    loadFilters()
 
     return () => {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const nextCollection = searchParams.get('collection') || ''
+    const nextCategory = searchParams.get('categorie_id') || ''
+    const nextSearch = searchParams.get('search') || ''
+
+    setFilters((currentFilters) => {
+      if (
+        currentFilters.collection === nextCollection &&
+        currentFilters.categorie_id === nextCategory &&
+        currentFilters.search === nextSearch
+      ) {
+        return currentFilters
+      }
+
+      return {
+        ...currentFilters,
+        collection: nextCollection,
+        categorie_id: nextCategory,
+        search: nextSearch
+      }
+    })
+  }, [searchParams])
 
   useEffect(() => {
     setProducts([])
@@ -144,7 +183,7 @@ const Boutique = () => {
         }
       },
       {
-        rootMargin: '240px 0px'
+        rootMargin: LOAD_MORE_ROOT_MARGIN
       }
     )
 
@@ -160,15 +199,40 @@ const Boutique = () => {
   }, [filters])
 
   const handleFilterChange = (patch) => {
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      ...patch
-    }))
+    setFilters((currentFilters) => {
+      const nextFilters = {
+        ...currentFilters,
+        ...patch
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, 'collection') && patch.collection) {
+        nextFilters.categorie_id = ''
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, 'categorie_id') && patch.categorie_id) {
+        nextFilters.collection = ''
+      }
+
+      const nextParams = {}
+      ;['collection', 'categorie_id', 'search'].forEach((key) => {
+        if (nextFilters[key]) {
+          nextParams[key] = nextFilters[key]
+        }
+      })
+      setSearchParams(nextParams, { replace: true })
+
+      return nextFilters
+    })
   }
 
   const handleFilterReset = () => {
     setFilters(initialFilters)
+    setSearchParams({}, { replace: true })
   }
+
+  const activeCollection = useMemo(() => (
+    collections.find((collection) => (collection.slug || collection.id) === filters.collection)
+  ), [collections, filters.collection])
 
   return (
     <main className="products-page boutique-page">
@@ -183,8 +247,10 @@ const Boutique = () => {
               </div>
               <h1>Nos luminaires <span>solaires</span></h1>
               <p>
-                Explorez la collection SolarLight avec un chargement fluide :
-                <br />des pages legeres et rapides pendant votre navigation.
+                {activeCollection
+                  ? `Collection ${activeCollection.title} : tous les produits correspondants sont filtres automatiquement.`
+                  : 'Explorez la collection SolarLight avec un chargement fluide :'}
+                {!activeCollection ? <><br />des pages legeres et rapides pendant votre navigation.</> : null}
               </p>
             </div>
           </div>
@@ -196,6 +262,7 @@ const Boutique = () => {
           <ProductFilters
             filters={filters}
             categories={categories}
+            collections={collections}
             onChange={handleFilterChange}
             onReset={handleFilterReset}
           />
@@ -204,15 +271,31 @@ const Boutique = () => {
         <ScrollReveal className="products-content" direction="right">
           <div className="products-header">
             <div>
-              <h2>Boutique</h2>
+              <h2>{activeCollection?.title || 'Boutique'}</h2>
               <p className="products-count">
                 {products.length} produit{products.length > 1 ? 's' : ''} charge{products.length > 1 ? 's' : ''}
                 {activeFilterCount > 0 ? ` avec ${activeFilterCount} filtre${activeFilterCount > 1 ? 's' : ''}` : ''}
               </p>
             </div>
-            <div className="boutique-view-actions" aria-hidden="true">
-              <button type="button"><FaThLarge /></button>
-              <button type="button"><FaThList /></button>
+            <div className="boutique-view-actions" aria-label="Changer l affichage des produits">
+              <button
+                type="button"
+                className={viewMode === 'grid' ? 'active' : ''}
+                onClick={() => setViewMode('grid')}
+                aria-label="Afficher en grille"
+                aria-pressed={viewMode === 'grid'}
+              >
+                <FaThLarge />
+              </button>
+              <button
+                type="button"
+                className={viewMode === 'list' ? 'active' : ''}
+                onClick={() => setViewMode('list')}
+                aria-label="Afficher en liste"
+                aria-pressed={viewMode === 'list'}
+              >
+                <FaThList />
+              </button>
             </div>
           </div>
 
@@ -236,7 +319,7 @@ const Boutique = () => {
             </div>
           ) : products.length > 0 ? (
             <>
-              <div className="catalog-grid">
+              <div className={`catalog-grid ${viewMode === 'list' ? 'catalog-list' : ''}`}>
                 {products.map((product, index) => (
                   <ScrollReveal key={product.id || product.id_produit} delay={(index % PAGE_SIZE) * 60}>
                     <ProductCard product={product} />

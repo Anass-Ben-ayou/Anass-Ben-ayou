@@ -118,6 +118,7 @@ Route::prefix('v1')->middleware(['auth.client', 'csrf.api'])->group(function () 
     Route::get('/contact-messages', [ContactController::class, 'myMessages']);
 
     // Avis produit
+    Route::get('/reviews/purchased-products', [ReviewController::class, 'purchasedProducts']);
     Route::post('/reviews', [ReviewController::class, 'store'])->middleware('throttle:reviews');
     Route::put('/reviews/{id}', [ReviewController::class, 'update'])->middleware('throttle:reviews');
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);

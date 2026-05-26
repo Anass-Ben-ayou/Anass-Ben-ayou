@@ -61,7 +61,7 @@ const AdminProducts = () => {
 
     try {
       const [categoryData, productData] = await Promise.all([
-        productService.getCategories(),
+        productService.getAllCategories(),
         productService.getAdminProducts({ per_page: 100 })
       ])
 
@@ -342,7 +342,7 @@ const AdminProducts = () => {
           <div className="admin-field">
             <label htmlFor="product-category">Categorie</label>
             <select id="product-category" name="id_categorie" value={form.id_categorie} onChange={handleChange} required>
-              <option value="">Choisir une categorie</option>
+              <option value="">Toutes les categories</option>
               {categories.map((category) => (
                 <option key={category.id_categorie || category.id} value={category.id_categorie || category.id}>
                   {category.nom || category.name}

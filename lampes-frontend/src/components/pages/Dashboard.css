@@ -460,6 +460,44 @@
   white-space: pre-wrap;
 }
 
+.dashboard-order-products {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dashboard-order-product {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.dashboard-order-product strong {
+  color: #e38a11;
+}
+
+.dashboard-order-review-link {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(227, 138, 17, 0.32);
+  color: #e38a11;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.dashboard-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 .admin-review-stars {
   display: flex;
   gap: 4px;

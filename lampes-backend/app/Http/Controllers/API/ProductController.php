@@ -7,6 +7,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ProductSummaryResource;
 use App\Models\Produit;
 use App\Support\SanitizesInput;
+use App\Support\StorefrontCollections;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
@@ -47,6 +48,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'categorie_id' => 'sometimes|integer|exists:categories,id_categorie',
             'category' => 'sometimes|string|max:255',
+            'collection' => 'sometimes|string|max:255',
             'prix_min' => 'sometimes|numeric|min:0',
             'prix_max' => 'sometimes|numeric|min:0',
             'search' => 'sometimes|string|max:255',
@@ -66,7 +68,7 @@ class ProductController extends Controller
             $cacheKey = 'products.index.'.md5(json_encode($request->query()));
 
             $data = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($request) {
-                $query = $this->baseProductQuery(true);
+                $query = $this->baseProductQuery(! $request->filled('collection'));
 
                 if ($request->filled('categorie_id')) {
                     $query->where('id_categorie', $request->integer('categorie_id'));
@@ -79,6 +81,16 @@ class ProductController extends Controller
                             ->where('slug', $category)
                             ->orWhere('nom', 'like', '%'.$category.'%');
                     });
+                }
+
+                if ($request->filled('collection')) {
+                    $collection = StorefrontCollections::find($request->string('collection')->toString());
+
+                    if (! $collection) {
+                        $query->whereRaw('1 = 0');
+                    } else {
+                        $query->whereIn('id_categorie', StorefrontCollections::categoryIds($collection));
+                    }
                 }
 
                 if ($request->filled('prix_min')) {

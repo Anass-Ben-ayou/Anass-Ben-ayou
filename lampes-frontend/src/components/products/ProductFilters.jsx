@@ -2,7 +2,25 @@ import React from 'react'
 import './ProductFilters.css'
 
 // Renders the boutique filters and keeps the inputs grouped in one place.
-const ProductFilters = ({ filters, categories, onChange, onReset }) => {
+const ProductFilters = ({ filters, categories, collections = [], onChange, onReset }) => {
+  const categorySelectValue = filters.collection ? `collection:${filters.collection}` : filters.categorie_id
+
+  const handleCategoryChange = (event) => {
+    const value = event.target.value
+
+    if (!value) {
+      onChange({ categorie_id: '', collection: '' })
+      return
+    }
+
+    if (value.startsWith('collection:')) {
+      onChange({ collection: value.replace('collection:', '') })
+      return
+    }
+
+    onChange({ categorie_id: value })
+  }
+
   return (
     <div className="filter-card">
       <h3 className="filter-title">Filtres boutique</h3>
@@ -22,10 +40,15 @@ const ProductFilters = ({ filters, categories, onChange, onReset }) => {
         <label className="filter-label">Categorie</label>
         <select
           className="filter-select"
-          value={filters.categorie_id}
-          onChange={(event) => onChange({ categorie_id: event.target.value })}
+          value={categorySelectValue}
+          onChange={handleCategoryChange}
         >
           <option value="">Toutes les categories</option>
+          {collections.map((collection) => (
+            <option key={`collection-${collection.slug || collection.id}`} value={`collection:${collection.slug || collection.id}`}>
+              {collection.title}
+            </option>
+          ))}
           {categories.map((category) => (
             <option key={category.id_categorie || category.id} value={category.id_categorie || category.id}>
               {category.nom || category.name}

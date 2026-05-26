@@ -72,6 +72,11 @@ export const productService = {
     return response.data.data
   },
 
+  async getPurchasedReviewProducts() {
+    const response = await api.get('/reviews/purchased-products')
+    return response.data.data
+  },
+
   async createProductReview(payload) {
     const response = await api.post('/reviews', payload)
     clearProductCache()
@@ -81,6 +86,10 @@ export const productService = {
   // Fetches the category list for filters and sections.
   async getCategories() {
     return (await getCachedResponse('/categories')) || []
+  },
+
+  async getAllCategories() {
+    return (await getCachedResponse('/categories', { include_empty: 1 })) || []
   },
 
   // Fetches products belonging to one category.

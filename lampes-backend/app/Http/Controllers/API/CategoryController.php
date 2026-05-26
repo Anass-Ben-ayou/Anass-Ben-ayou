@@ -13,14 +13,21 @@ use Illuminate\Support\Facades\Validator;
 class CategoryController extends Controller
 {
     // Returns the full category list.
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $categories = Categorie::withCount(['produits' => fn ($query) => $query->where('status', 'active')])
-                ->whereHas('produits', fn ($query) => $query->where('status', 'active'))
-                ->orderBy('nom')
-                ->get()
-                ->map(fn ($categorie) => (new CategoryResource($categorie))->resolve());
+            $includeEmpty = $request->boolean('include_empty');
+
+            $query = Categorie::withCount(['produits' => fn ($productQuery) => $productQuery->where('status', 'active')]);
+
+            if (! $includeEmpty) {
+                $query->whereHas('produits', fn ($productQuery) => $productQuery->where('status', 'active'));
+            }
+
+            $categories = $query
+                    ->orderBy('nom')
+                    ->get()
+                    ->map(fn ($categorie) => (new CategoryResource($categorie))->resolve());
 
             return response()->json([
                 'success' => true,

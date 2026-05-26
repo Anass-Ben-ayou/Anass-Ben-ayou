@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Avis;
 use App\Models\SiteReview;
 use App\Support\SanitizesInput;
 use Illuminate\Http\Request;
@@ -27,12 +28,24 @@ class SiteReviewController extends Controller
     // Returns the public testimonials shown on the contact page.
     public function index()
     {
-        $reviews = SiteReview::query()
+        $siteReviews = SiteReview::query()
             ->where('is_approved', true)
             ->latest('review_date')
             ->latest()
             ->get()
             ->map(fn (SiteReview $review) => $this->formatReview($review));
+
+        $productReviews = Avis::with(['client', 'produit'])
+            ->latest('date_avis')
+            ->latest()
+            ->limit(20)
+            ->get()
+            ->map(fn (Avis $review) => $this->formatProductReview($review));
+
+        $reviews = collect($siteReviews->all())
+            ->merge($productReviews)
+            ->sortByDesc('created_at')
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -95,6 +108,26 @@ class SiteReviewController extends Controller
             'date' => optional($review->review_date)->format('Y-m-d') ?: $review->created_at?->format('Y-m-d'),
             'is_approved' => $review->is_approved,
             'created_at' => $review->created_at,
+        ];
+    }
+
+    protected function formatProductReview(Avis $review): array
+    {
+        $customerName = trim(($review->client?->prenom ?: '').' '.($review->client?->nom ?: ''));
+
+        return [
+            'id' => 'product-'.$review->id_avis,
+            'source' => 'product',
+            'product_id' => $review->id_produit,
+            'product_name' => SanitizesInput::plain($review->produit?->nom ?: 'Produit achete', 255),
+            'title' => SanitizesInput::plain($review->produit?->nom ?: 'Avis produit', 255),
+            'customer_name' => SanitizesInput::plain($customerName ?: ($review->client?->email ?: 'Client SolarLight'), 255),
+            'email' => $review->client?->email ? SanitizesInput::email($review->client->email) : null,
+            'comment' => SanitizesInput::paragraph($review->commentaire, 1500),
+            'rating' => (int) $review->note,
+            'date' => optional($review->date_avis)->format('Y-m-d') ?: $review->created_at?->format('Y-m-d'),
+            'is_approved' => true,
+            'created_at' => $review->date_avis ?: $review->created_at,
         ];
     }
 }

@@ -21,6 +21,11 @@ class Avis extends Model
         'id_produit',
     ];
 
+    protected $casts = [
+        'date_avis' => 'datetime',
+        'note' => 'integer',
+    ];
+
     // Relation avec le client
     public function client()
     {

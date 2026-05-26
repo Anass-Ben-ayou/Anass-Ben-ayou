@@ -436,9 +436,7 @@ class OrderController extends Controller
         $panier = Panier::where('id_client', $clientId)->first();
 
         if ($panier) {
-            $productIds = collect($cartItems)->pluck('id_produit')->all();
             LignePanier::where('id_panier', $panier->id_panier)
-                ->whereIn('id_produit', $productIds)
                 ->delete();
         }
 

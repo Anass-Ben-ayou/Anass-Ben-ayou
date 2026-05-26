@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom'
 import { FaBoxOpen, FaEnvelope, FaHeart, FaMapMarkerAlt, FaPlusCircle, FaStar, FaUserShield, FaUsers } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
+import { api } from '../../services/api'
 import { productService } from '../../services/productService'
 import { userService } from '../../services/userService'
 import { resolveProductImage } from '../../utils/productImages'
@@ -34,9 +35,11 @@ const Dashboard = () => {
   const location = useLocation()
   const isAdmin = user?.role === 'admin' || user?.email === 'admin@lampes.ma'
   const [adminSection, setAdminSection] = useState('products')
+  const [clientSection, setClientSection] = useState('profile')
   const [categories, setCategories] = useState([])
   const [adminProducts, setAdminProducts] = useState([])
   const [adminUsers, setAdminUsers] = useState([])
+  const [clientOrders, setClientOrders] = useState([])
   const [contactMessages, setContactMessages] = useState([])
   const [siteReviews, setSiteReviews] = useState([])
   const [adminFeedbackTab, setAdminFeedbackTab] = useState('messages')
@@ -46,6 +49,7 @@ const Dashboard = () => {
   const [submittingUser, setSubmittingUser] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [loadingUsers, setLoadingUsers] = useState(false)
+  const [loadingClientOrders, setLoadingClientOrders] = useState(false)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [loadingSiteReviews, setLoadingSiteReviews] = useState(false)
   const [deletingProductId, setDeletingProductId] = useState(null)
@@ -83,6 +87,19 @@ const Dashboard = () => {
     }
   }, [isAdmin, location.search])
 
+  useEffect(() => {
+    if (isAdmin) {
+      return
+    }
+
+    const params = new URLSearchParams(location.search)
+    const section = params.get('section')
+
+    if (section === 'profile' || section === 'orders' || section === 'favorites' || section === 'addresses') {
+      setClientSection(section)
+    }
+  }, [isAdmin, location.search])
+
   useEffect(() => () => {
     if (imagePreview && productForm.image_file) {
       URL.revokeObjectURL(imagePreview)
@@ -97,7 +114,7 @@ const Dashboard = () => {
     const loadAdminData = async () => {
       try {
         const [categoryData, productData, userData, messageData, reviewData] = await Promise.all([
-          productService.getCategories(),
+          productService.getAllCategories(),
           productService.getAdminProducts({ per_page: 50 }),
           userService.getAdminUsers(),
           productService.getAdminContactMessages(),
@@ -122,20 +139,27 @@ const Dashboard = () => {
       return
     }
 
-    const loadUserMessages = async () => {
+    const loadUserDashboardData = async () => {
       setLoadingMessages(true)
+      setLoadingClientOrders(true)
 
       try {
-        const messageData = await productService.getMyContactMessages()
+        const [messageData, orderResponse] = await Promise.all([
+          productService.getMyContactMessages(),
+          api.get('/orders')
+        ])
+
         setContactMessages(Array.isArray(messageData) ? messageData : [])
+        setClientOrders(Array.isArray(orderResponse.data?.data?.data) ? orderResponse.data.data.data : [])
       } catch (error) {
-        toast.error('Impossible de charger vos messages')
+        toast.error('Impossible de charger les donnees de votre compte')
       } finally {
         setLoadingMessages(false)
+        setLoadingClientOrders(false)
       }
     }
 
-    loadUserMessages()
+    loadUserDashboardData()
   }, [isAdmin, user])
 
   const refreshAdminProducts = async () => {
@@ -177,6 +201,19 @@ const Dashboard = () => {
       toast.error(isAdmin ? 'Impossible de rafraichir les messages' : 'Impossible de charger vos messages')
     } finally {
       setLoadingMessages(false)
+    }
+  }
+
+  const refreshClientOrders = async () => {
+    setLoadingClientOrders(true)
+
+    try {
+      const response = await api.get('/orders')
+      setClientOrders(Array.isArray(response.data?.data?.data) ? response.data.data.data : [])
+    } catch (error) {
+      toast.error('Impossible de charger vos commandes')
+    } finally {
+      setLoadingClientOrders(false)
     }
   }
 
@@ -427,11 +464,23 @@ const Dashboard = () => {
     { id: 'orders', label: 'Commandes', icon: <FaBoxOpen /> },
     { id: 'payments', label: 'Paiements', icon: <FaUserShield /> }
   ]
+  const clientNavigation = [
+    { id: 'profile', label: 'Profil', icon: <FaUserShield /> },
+    { id: 'orders', label: 'Commandes', icon: <FaBoxOpen /> },
+    { id: 'favorites', label: 'Favoris', icon: <FaHeart /> },
+    { id: 'addresses', label: 'Adresses', icon: <FaMapMarkerAlt /> }
+  ]
   const adminSectionTitle = {
     products: 'Apercu des produits',
     users: 'Apercu des utilisateurs',
     messages: 'Messages et avis utilisateurs'
   }[adminSection] || 'Administration'
+  const clientSectionTitle = {
+    profile: 'Mon profil',
+    orders: 'Mes commandes',
+    favorites: 'Mes favoris',
+    addresses: 'Mes adresses'
+  }[clientSection] || 'Mon espace'
   const canShowAdminFormToggle = isAdmin && (adminSection === 'products' || adminSection === 'users')
   const formatCurrency = (value) => (
     new Intl.NumberFormat('fr-MA', {
@@ -512,12 +561,17 @@ const Dashboard = () => {
                   )
                 ))
               ) : (
-                <>
-                  <div><FaUserShield /> Profil</div>
-                  <div><FaBoxOpen /> Commandes</div>
-                  <div><FaHeart /> Favoris</div>
-                  <div><FaMapMarkerAlt /> Adresses</div>
-                </>
+                clientNavigation.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`dashboard-menu-btn ${clientSection === item.id ? 'active' : ''}`}
+                    onClick={() => setClientSection(item.id)}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))
               )}
             </div>
 
@@ -558,7 +612,7 @@ const Dashboard = () => {
                   <h1>
                     {isAdmin
                       ? adminSectionTitle
-                      : 'Mon espace'}
+                      : clientSectionTitle}
                   </h1>
                 </div>
                 {canShowAdminFormToggle ? (
@@ -626,7 +680,7 @@ const Dashboard = () => {
                     <label className="admin-field">
                       <span>Categorie</span>
                       <select name="id_categorie" value={productForm.id_categorie} onChange={handleProductChange} required>
-                        <option value="">Choisir une categorie</option>
+                        <option value="">Toutes les categories</option>
                         {categories.map((category) => (
                           <option key={category.id_categorie || category.id} value={category.id_categorie || category.id}>
                             {category.nom || category.name}
@@ -962,75 +1016,193 @@ const Dashboard = () => {
 
             {!isAdmin ? (
               <>
-                <div className="dashboard-card glass-card">
-                  <div className="dashboard-card-header">
-                    <div>
-                      <span className="dashboard-kicker">Profil</span>
-                      <h2>Informations du compte</h2>
-                    </div>
-                  </div>
-
-                  <div className="dashboard-info dashboard-profile-info">
-                    <div className="info-group">
-                      <label>Nom complet</label>
-                      <p>{user ? `${user.prenom} ${user.nom}` : '-'}</p>
-                    </div>
-                    <div className="info-group">
-                      <label>Adresse e-mail</label>
-                      <p>{user?.email || '-'}</p>
-                    </div>
-                    <div className="info-group">
-                      <label>Telephone</label>
-                      <p>{user?.telephone || '-'}</p>
-                    </div>
-                    <div className="info-group">
-                      <label>Date d inscription</label>
-                      <p>{registrationDate}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="dashboard-card glass-card">
-                  <div className="admin-product-header">
-                    <div>
-                      <h2>Mes messages envoyes</h2>
-                      <p>Les messages envoyes depuis Contactez-nous avec votre email sont affiches ici.</p>
-                    </div>
-                    <button type="button" className="admin-refresh-btn" onClick={refreshContactMessages} disabled={loadingMessages}>
-                      {loadingMessages ? 'Actualisation...' : 'Rafraichir'}
-                    </button>
-                  </div>
-
-                  <div className="contact-message-list">
-                    {contactMessages.length ? contactMessages.map((message) => (
-                      <article key={message.id_contact_message} className="contact-message-item">
-                        <div className="contact-message-heading">
-                          <div>
-                            <strong>{message.subject}</strong>
-                            <span>{message.email}</span>
-                          </div>
-                          <time>{formatMessageDate(message.created_at)}</time>
+                {clientSection === 'profile' ? (
+                  <>
+                    <div className="dashboard-card glass-card">
+                      <div className="dashboard-card-header">
+                        <div>
+                          <span className="dashboard-kicker">Profil</span>
+                          <h2>Informations du compte</h2>
                         </div>
-                        <p>{message.message}</p>
-                      </article>
-                    )) : (
-                      <div className="contact-message-empty">
-                        {loadingMessages ? 'Chargement des messages...' : 'Aucun message envoye pour le moment.'}
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                <div className="dashboard-panels">
-                  <article className="dashboard-mini glass-card">
-                    <h3>Statut du compte</h3>
-                    <p>Compte actif et pret pour vos prochaines commandes.</p>
-                  </article>
-                  <article className="dashboard-mini glass-card">
-                    <h3>Conseil deco</h3>
-                    <p>Associez une lampe de table chaude avec une suspension graphique pour equilibrer la piece.</p>
-                  </article>
-                </div>
+                      <div className="dashboard-info dashboard-profile-info">
+                        <div className="info-group">
+                          <label>Nom complet</label>
+                          <p>{user ? `${user.prenom} ${user.nom}` : '-'}</p>
+                        </div>
+                        <div className="info-group">
+                          <label>Adresse e-mail</label>
+                          <p>{user?.email || '-'}</p>
+                        </div>
+                        <div className="info-group">
+                          <label>Telephone</label>
+                          <p>{user?.telephone || '-'}</p>
+                        </div>
+                        <div className="info-group">
+                          <label>Date d inscription</label>
+                          <p>{registrationDate}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="dashboard-card glass-card">
+                      <div className="admin-product-header">
+                        <div>
+                          <h2>Mes messages envoyes</h2>
+                          <p>Les messages envoyes depuis Contactez-nous avec votre email sont affiches ici.</p>
+                        </div>
+                        <button type="button" className="admin-refresh-btn" onClick={refreshContactMessages} disabled={loadingMessages}>
+                          {loadingMessages ? 'Actualisation...' : 'Rafraichir'}
+                        </button>
+                      </div>
+
+                      <div className="contact-message-list">
+                        {contactMessages.length ? contactMessages.map((message) => (
+                          <article key={message.id_contact_message} className="contact-message-item">
+                            <div className="contact-message-heading">
+                              <div>
+                                <strong>{message.subject}</strong>
+                                <span>{message.email}</span>
+                              </div>
+                              <time>{formatMessageDate(message.created_at)}</time>
+                            </div>
+                            <p>{message.message}</p>
+                          </article>
+                        )) : (
+                          <div className="contact-message-empty">
+                            {loadingMessages ? 'Chargement des messages...' : 'Aucun message envoye pour le moment.'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="dashboard-panels">
+                      <article className="dashboard-mini glass-card">
+                        <h3>Statut du compte</h3>
+                        <p>Compte actif et pret pour vos prochaines commandes.</p>
+                      </article>
+                      <article className="dashboard-mini glass-card">
+                        <h3>Conseil deco</h3>
+                        <p>Associez une lampe de table chaude avec une suspension graphique pour equilibrer la piece.</p>
+                      </article>
+                    </div>
+                  </>
+                ) : null}
+
+                {clientSection === 'orders' ? (
+                  <div className="dashboard-card glass-card">
+                    <div className="admin-product-header">
+                      <div>
+                        <span className="dashboard-kicker">Commandes</span>
+                        <h2>Suivi de vos commandes</h2>
+                        <p>Les produits payes ou confirmes depuis votre panier apparaissent ici.</p>
+                      </div>
+                      <button type="button" className="admin-refresh-btn" onClick={refreshClientOrders} disabled={loadingClientOrders}>
+                        {loadingClientOrders ? 'Actualisation...' : 'Rafraichir'}
+                      </button>
+                    </div>
+
+                    <div className="contact-message-list">
+                      {clientOrders.length ? clientOrders.map((order) => (
+                        <article key={order.id_commande} className="contact-message-item">
+                          <div className="contact-message-heading">
+                            <div>
+                              <strong>Commande #{order.id_commande}</strong>
+                              <span>
+                                {formatCurrency(order.total || 0)}
+                                {' - '}
+                                {order.paiement?.statut || order.payment_status || order.statut || 'en_attente'}
+                              </span>
+                            </div>
+                            <time>{order.date_commande ? formatMessageDate(order.date_commande) : '-'}</time>
+                          </div>
+
+                          <div className="dashboard-order-products">
+                            {(order.ligne_commandes || order.ligneCommandes || []).map((line) => {
+                              const productId = line.id_produit || line.produit?.id_produit || line.produit?.id
+
+                              return (
+                                <div key={line.id_ligne_commande || `${order.id_commande}-${line.id_produit}`} className="dashboard-order-product">
+                                  <span>{line.produit?.nom || 'Produit'}</span>
+                                  <strong>x{line.quantite}</strong>
+                                  {productId ? (
+                                    <Link to={`/product/${productId}?tab=avis`} className="dashboard-order-review-link">
+                                      Laisser un avis
+                                    </Link>
+                                  ) : null}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          <p>
+                            {[order.livraison?.adresse, order.livraison?.ville, order.livraison?.code_postal, order.livraison?.pays]
+                              .filter(Boolean)
+                              .join(', ') || 'Adresse de livraison non renseignee'}
+                          </p>
+                        </article>
+                      )) : (
+                        <div className="contact-message-empty">
+                          {loadingClientOrders ? 'Chargement des commandes...' : 'Aucune commande pour le moment.'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="dashboard-section-actions">
+                      <Link to="/orders" className="admin-refresh-btn">Voir la page detaillee</Link>
+                    </div>
+                  </div>
+                ) : null}
+
+                {clientSection === 'favorites' ? (
+                  <div className="dashboard-card glass-card">
+                    <div className="admin-product-header">
+                      <div>
+                        <span className="dashboard-kicker">Favoris</span>
+                        <h2>Vos produits favoris</h2>
+                        <p>La liste de favoris sera affichee ici quand des produits seront sauvegardes.</p>
+                      </div>
+                      <Link to="/boutique" className="admin-refresh-btn">Explorer la boutique</Link>
+                    </div>
+
+                    <div className="contact-message-empty">
+                      Aucun favori enregistre pour le moment.
+                    </div>
+                  </div>
+                ) : null}
+
+                {clientSection === 'addresses' ? (
+                  <div className="dashboard-card glass-card">
+                    <div className="dashboard-card-header">
+                      <div>
+                        <span className="dashboard-kicker">Adresses</span>
+                        <h2>Informations de livraison</h2>
+                      </div>
+                    </div>
+
+                    <div className="dashboard-info dashboard-profile-info">
+                      <div className="info-group">
+                        <label>Email</label>
+                        <p>{user?.email || '-'}</p>
+                      </div>
+                      <div className="info-group">
+                        <label>Telephone</label>
+                        <p>{user?.telephone || '-'}</p>
+                      </div>
+                      <div className="info-group">
+                        <label>Adresse principale</label>
+                        <p>-</p>
+                        <span>Les adresses de livraison apparaissent avec vos commandes.</span>
+                      </div>
+                      <div className="info-group">
+                        <label>Prochaine etape</label>
+                        <p>Checkout</p>
+                        <span>Ajoutez une adresse lors de votre prochaine commande.</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="dashboard-panels">

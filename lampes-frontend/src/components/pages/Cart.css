@@ -219,11 +219,6 @@
   background: rgba(227, 138, 17, 0.06);
 }
 
-.checkout-method.disabled {
-  opacity: 0.58;
-  cursor: not-allowed;
-}
-
 .checkout-method input {
   margin-top: 3px;
   accent-color: #e38a11;
